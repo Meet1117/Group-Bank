@@ -86,7 +86,7 @@ function welcomeHtml(firstName) {
                   </ul>
                 </div>
                 <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;">
-                  Happy travels,<br />
+                  Meet Patel,<br />
                   <span style="color:#0f172a;font-weight:600;">The Group Bank Team</span>
                 </p>
               </td>

@@ -84,15 +84,20 @@ export default function Login() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-5 py-10 lg:flex-row lg:items-center lg:gap-16 lg:px-8">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-start px-5 py-8 lg:flex-row lg:items-center lg:justify-center lg:gap-16 lg:py-10 lg:px-8">
+        {/* Brand mark — sits at the very top on mobile only */}
+        <div className="mb-6 flex w-full justify-center lg:hidden">
+          <Logo />
+        </div>
+
         {/* Hero / pitch */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="mb-10 w-full max-w-xl text-center lg:mb-0 lg:text-left"
+          className="order-2 mt-10 w-full max-w-xl text-center lg:order-1 lg:mt-0 lg:text-left"
         >
-          <div className="mb-6 flex justify-center lg:justify-start">
+          <div className="mb-6 hidden lg:flex lg:justify-start">
             <Logo />
           </div>
 
@@ -152,7 +157,7 @@ export default function Login() {
           initial={{ opacity: 0, y: 30, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
-          className="w-full max-w-sm"
+          className="order-1 w-full max-w-sm lg:order-2"
         >
           <div className="glass rounded-2xl border border-white/40 p-7 shadow-xl shadow-brand-900/5">
             <div className="mb-1 flex justify-center">
