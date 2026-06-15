@@ -16,6 +16,11 @@ const env = {
 
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
 
+  // Super-admin: this email gets full admin-dashboard access.
+  SUPER_ADMIN_EMAIL: (
+    process.env.SUPER_ADMIN_EMAIL || "meetp2967@gmail.com"
+  ).toLowerCase(),
+
   // SMTP / email (optional — email features skip gracefully if unset)
   SMTP_HOST: process.env.SMTP_HOST || "",
   SMTP_PORT: parseInt(process.env.SMTP_PORT, 10) || 587,

@@ -8,6 +8,7 @@ import {
   Users,
   ChevronRight,
   PiggyBank,
+  ShieldCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../lib/api";
@@ -111,11 +112,23 @@ export default function Dashboard() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        className="flex items-start justify-between gap-3"
       >
-        <p className="text-sm font-medium text-slate-500">Welcome back</p>
-        <h1 className="mt-0.5 font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-          Hi {firstName} 👋
-        </h1>
+        <div>
+          <p className="text-sm font-medium text-slate-500">Welcome back</p>
+          <h1 className="mt-0.5 font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Hi {firstName} 👋
+          </h1>
+        </div>
+        {user?.isAdmin && (
+          <Link
+            to="/admin"
+            className="inline-flex flex-none items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[0.97]"
+          >
+            <ShieldCheck size={16} />
+            Admin
+          </Link>
+        )}
       </motion.div>
 
       {/* Primary actions */}

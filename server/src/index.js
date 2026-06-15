@@ -18,6 +18,7 @@ const roomRoutes = require("./routes/rooms");
 const transactionRoutes = require("./routes/transactions");
 const messageRoutes = require("./routes/messages");
 const notificationRoutes = require("./routes/notifications");
+const adminRoutes = require("./routes/admin");
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/rooms/:roomId/transactions", transactionRoutes);
 app.use("/api/rooms/:roomId/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin", adminRoutes);
 
 // ----- 404 + error handling -----
 app.use(notFound);

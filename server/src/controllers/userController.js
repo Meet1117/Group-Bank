@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const { isSuperAdmin } = require("../middleware/admin");
 
 /**
  * Shape the User document into the public client-facing object.
@@ -11,6 +12,8 @@ function publicUser(user) {
     firstName: user.firstName,
     lastName: user.lastName,
     avatar: user.avatar,
+    isAdmin: isSuperAdmin(user),
+    blocked: !!user.blocked,
   };
 }
 

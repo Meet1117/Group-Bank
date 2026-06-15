@@ -29,6 +29,11 @@ async function auth(req, res, next) {
     if (!user) {
       return res.status(401).json({ message: "Not authorized, user not found" });
     }
+    if (user.blocked) {
+      return res
+        .status(403)
+        .json({ message: "Your account has been blocked by the admin." });
+    }
     req.userId = String(user._id);
     req.user = user;
     return next();

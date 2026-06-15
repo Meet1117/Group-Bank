@@ -35,6 +35,11 @@ const UserSchema = new mongoose.Schema(
         type: Object,
       },
     ],
+    // Admin moderation: a blocked user cannot log in or use the app.
+    blocked: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

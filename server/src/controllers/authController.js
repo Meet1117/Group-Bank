@@ -4,6 +4,7 @@ const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
 const { sendWelcomeEmail } = require("../services/email");
 const { createNotification } = require("../services/notify");
+const { isSuperAdmin } = require("../middleware/admin");
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -21,6 +22,8 @@ function publicUser(user) {
     firstName: user.firstName,
     lastName: user.lastName,
     avatar: user.avatar,
+    isAdmin: isSuperAdmin(user),
+    blocked: !!user.blocked,
   };
 }
 
@@ -123,6 +126,12 @@ async function googleLogin(req, res) {
       } catch (err) {
         console.warn("welcome notification failed:", err && err.message);
       }
+    }
+
+    if (user.blocked) {
+      return res
+        .status(403)
+        .json({ message: "Your account has been blocked by the admin." });
     }
 
     const token = signToken(user._id);

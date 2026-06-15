@@ -13,6 +13,7 @@ import DepositPage from "./pages/DepositPage.jsx";
 import ExpensePage from "./pages/ExpensePage.jsx";
 import Chat from "./pages/Chat.jsx";
 import Requests from "./pages/Requests.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
 
 export default function App() {
   // NOTE: No route-level <AnimatePresence> here. Wrapping <Routes> in
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/join/:code" element={<JoinRoom />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/room/:id" element={<Room />} />
         <Route path="/room/:id/deposit" element={<DepositPage />} />
         <Route path="/room/:id/expense" element={<ExpensePage />} />

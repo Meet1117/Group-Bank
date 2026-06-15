@@ -19,7 +19,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401) {
+    const status = error?.response?.status;
+    const msg = error?.response?.data?.message || "";
+    // Log out on unauthorized, or when the account has been blocked (403).
+    if (status === 401 || (status === 403 && /blocked/i.test(msg))) {
       localStorage.removeItem("gb_token");
       localStorage.removeItem("gb_user");
       if (
