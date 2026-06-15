@@ -1,0 +1,258 @@
+==========================================================================
+ GROUP BANK — DEPLOYMENT GUIDE (make the site live for free)
+==========================================================================
+
+This guide takes your app from "runs on my laptop" to "live on the internet,
+installable on phones, with working Google login, real-time chat and push
+notifications" — using only FREE services.
+
+Repo: https://github.com/Meet1117/Group-Bank
+
+--------------------------------------------------------------------------
+ 0. HOW IT FITS TOGETHER
+--------------------------------------------------------------------------
+Your app has 3 parts. Each goes to a different free host:
+
+   client/  (React + Vite website)      ->  VERCEL      (free, HTTPS)
+   server/  (Express + Socket.io API)   ->  RENDER      (free Web Service)
+   database (MongoDB)                    ->  MONGODB ATLAS (free, already set up)
+
+WHY two different hosts?
+  - The website is just static files -> Vercel serves them super fast.
+  - The API needs an always-on server with WebSockets (for live chat) ->
+    Render's "Web Service" supports that. (Do NOT put the server on Vercel —
+    it's serverless and would break Socket.io.)
+
+ORDER MATTERS. We deploy the BACKEND first (to get its URL), then the
+FRONTEND (which needs that URL), then we point them at each other.
+
+--------------------------------------------------------------------------
+ 1. PREREQUISITES (one-time)
+--------------------------------------------------------------------------
+[ ] Code is on GitHub (DONE: github.com/Meet1117/Group-Bank)
+[ ] A GitHub account (you have it: Meet1117)
+[ ] Your local file  server/.env  open on the side — you'll COPY values from
+    it into the hosting dashboards. NEVER paste these secret values into any
+    file that gets committed to GitHub.
+[ ] Create free accounts (sign in with GitHub on both):
+       - https://render.com
+       - https://vercel.com
+
+IMPORTANT: Before deploying, push the two new files added for deployment
+(client/vercel.json and this Deployment.txt):
+
+    cd "/Users/meetpatel/Downloads/Project/Group Bank"
+    git add -A
+    git commit -m "Add deployment config (vercel.json) + guide"
+    git push
+
+--------------------------------------------------------------------------
+ 2. MONGODB ATLAS — quick check (already configured)
+--------------------------------------------------------------------------
+2.1  Go to https://cloud.mongodb.com -> your project (the one that owns the
+     "MeetsMongodbCluster" cluster).
+2.2  Left menu -> SECURITY -> Network Access.
+     Make sure there is an entry  0.0.0.0/0  with status ACTIVE (green).
+     (Render's servers use changing IPs, so "allow from anywhere" is required.)
+2.3  That's it — your MONGODB_URI in server/.env already points to this cluster.
+
+--------------------------------------------------------------------------
+ 3. DEPLOY THE BACKEND (server/) TO RENDER
+--------------------------------------------------------------------------
+3.1  Go to https://render.com -> sign in with GitHub.
+3.2  Click  New +  ->  Web Service.
+3.3  Connect the repository:  Meet1117/Group-Bank  (authorize Render if asked).
+3.4  Fill in the settings:
+        Name:               group-bank-api   (or anything; becomes your URL)
+        Region:             pick the closest (e.g. Singapore for India)
+        Branch:             main
+        Root Directory:     server
+        Runtime:            Node
+        Build Command:      npm install
+        Start Command:      npm start
+        Instance Type:      Free
+3.5  Click "Advanced" -> add Environment Variables. Add each NAME below and
+     paste the matching VALUE from your local  server/.env  file:
+
+        MONGODB_URI         (copy from server/.env)
+        JWT_SECRET          (copy from server/.env)
+        GOOGLE_CLIENT_ID    (copy from server/.env)
+        VAPID_PUBLIC_KEY    (copy from server/.env)
+        VAPID_PRIVATE_KEY   (copy from server/.env)
+        VAPID_SUBJECT       mailto:admin@groupbank.app
+        CLIENT_URL          https://PLACEHOLDER   <- temporary, fixed in step 5
+        SMTP_HOST           smtp.gmail.com         (optional - welcome email)
+        SMTP_PORT           587                    (optional)
+        SMTP_USER           (your gmail, from server/.env)   (optional)
+        SMTP_PASS           (your gmail app password)        (optional)
+        FROM_EMAIL          Group Bank <no-reply@groupbank.app>  (optional)
+
+     >>> DO NOT add a PORT variable. Render provides its own PORT and the
+         app already reads it automatically. Setting PORT will break it.
+
+3.6  Click  Create Web Service. Wait ~2-4 min for the first build.
+3.7  When it shows "Live", copy your backend URL from the top. It looks like:
+
+        https://group-bank-api.onrender.com
+
+     Test it: open   https://group-bank-api.onrender.com/api/health
+     You should see:  {"ok":true}
+
+     KEEP THIS URL — you need it in the next step.
+
+--------------------------------------------------------------------------
+ 4. DEPLOY THE FRONTEND (client/) TO VERCEL
+--------------------------------------------------------------------------
+4.1  Go to https://vercel.com -> sign in with GitHub.
+4.2  Click  Add New...  ->  Project  ->  Import  Meet1117/Group-Bank.
+4.3  Configure Project:
+        Framework Preset:   Vite   (auto-detected)
+        Root Directory:     client     <-- IMPORTANT: click "Edit" and set to client
+        Build Command:      npm run build   (default)
+        Output Directory:   dist            (default)
+4.4  Expand "Environment Variables" and add these 4 (use YOUR Render URL
+     from step 3.7 — note the /api on the first one):
+
+        VITE_API_URL            https://group-bank-api.onrender.com/api
+        VITE_SOCKET_URL         https://group-bank-api.onrender.com
+        VITE_GOOGLE_CLIENT_ID   (copy from client/.env)
+        VITE_VAPID_PUBLIC_KEY   (copy from client/.env)
+
+     >>> VITE_API_URL MUST be the full Render URL ending in /api (in
+         production there is no local proxy like in development).
+
+4.5  Click  Deploy. Wait ~1-2 min.
+4.6  Copy your live website URL, e.g.:
+
+        https://group-bank.vercel.app
+
+--------------------------------------------------------------------------
+ 5. LINK THEM TOGETHER (fixes CORS / login)
+--------------------------------------------------------------------------
+The backend only trusts requests from the website URL. Right now CLIENT_URL
+is a placeholder, so login/chat will be blocked until you fix it.
+
+5.1  Go back to RENDER -> your service -> Environment.
+5.2  Edit  CLIENT_URL  and set it to your EXACT Vercel URL (no trailing slash):
+
+        CLIENT_URL = https://group-bank.vercel.app
+
+5.3  Save. Render will automatically redeploy (~1-2 min).
+
+--------------------------------------------------------------------------
+ 6. UPDATE GOOGLE OAUTH FOR THE LIVE SITE
+--------------------------------------------------------------------------
+Google must know your new website domain or login will fail.
+
+6.1  Go to https://console.cloud.google.com -> APIs & Services -> Credentials.
+6.2  Click your OAuth 2.0 Client ID (Web application).
+6.3  Under "Authorized JavaScript origins", ADD:
+
+        https://group-bank.vercel.app
+
+6.4  Under "Authorized redirect URIs", ADD:
+
+        https://group-bank.vercel.app
+
+6.5  Save. (Changes can take a few minutes to apply.)
+6.6  If your OAuth consent screen is in "Testing" mode, make sure your Google
+     email is listed under "Test users" (or publish the app).
+
+--------------------------------------------------------------------------
+ 7. TEST IT LIVE (do these in order)
+--------------------------------------------------------------------------
+Open your Vercel URL on your computer first:
+
+[ ] Page loads, login screen appears
+[ ] "Sign in with Google" -> lands on the dashboard
+[ ] Create a room -> open it (no "could not load")
+[ ] Deposit -> "Split equally" -> amounts are correct
+[ ] Add an expense -> uncheck a member -> save
+[ ] Open Chat -> send a message (real-time)
+[ ] Share -> QR code + link show; copy the link
+[ ] Open the copied link in another browser/phone -> it auto-joins (open
+    room) or shows "Send request" (invite-only)
+
+NOTE on the FIRST request after idle: see section 9 (Render sleeps).
+
+--------------------------------------------------------------------------
+ 8. INSTALL ON YOUR PHONE (PWA) + PUSH NOTIFICATIONS
+--------------------------------------------------------------------------
+Because the live site is HTTPS, it installs like an app and can send push.
+
+ANDROID (Chrome):
+  - Open the Vercel URL -> menu (3 dots) -> "Install app" / "Add to Home screen".
+  - Open the installed app -> Profile -> turn ON "Push notifications" -> Allow.
+
+iPHONE (Safari, iOS 16.4+):
+  - Open the Vercel URL in Safari -> Share -> "Add to Home Screen".
+  - Open it FROM the home screen icon (not Safari) -> Profile -> turn ON push -> Allow.
+
+Then test: have a friend join / make a deposit -> you get a notification even
+when the app is closed.
+
+--------------------------------------------------------------------------
+ 9. FREE-TIER NOTES & TROUBLESHOOTING
+--------------------------------------------------------------------------
+* RENDER FREE SLEEPS: after ~15 min of no traffic the backend goes to sleep.
+  The NEXT request wakes it and takes ~30-50 seconds (login may seem stuck the
+  first time). After that it's fast. This is normal for the free plan.
+  (Want always-on free? Alternatives: Fly.io, Koyeb.)
+
+* "Sign in failed" / nothing happens on login:
+    - CLIENT_URL on Render must EXACTLY match the Vercel URL (no trailing /).
+    - Vercel domain must be in Google's Authorized origins (step 6).
+    - VITE_API_URL on Vercel must be the Render URL + /api.
+
+* Login works but rooms/chat fail:
+    - Check VITE_SOCKET_URL = the Render URL (no /api).
+    - Check Render logs (Render dashboard -> Logs) for errors.
+
+* Refreshing a page like /room/123 shows 404:
+    - client/vercel.json must be present (it is) and pushed to GitHub.
+
+* Database errors in Render logs:
+    - Atlas Network Access must allow 0.0.0.0/0 (step 2).
+
+* Did you change env vars? Render: redeploys automatically on save.
+  Vercel: env var changes need a redeploy (Deployments -> ... -> Redeploy).
+
+--------------------------------------------------------------------------
+ 10. UPDATING THE APP LATER (auto-deploy)
+--------------------------------------------------------------------------
+Both hosts auto-deploy when you push to GitHub's main branch:
+
+    cd "/Users/meetpatel/Downloads/Project/Group Bank"
+    git add -A
+    git commit -m "describe your change"
+    git push
+
+Render rebuilds the backend, Vercel rebuilds the frontend. Done.
+
+--------------------------------------------------------------------------
+ 11. ENVIRONMENT VARIABLE REFERENCE
+--------------------------------------------------------------------------
+RENDER (backend / server):
+    MONGODB_URI          your Atlas connection string
+    JWT_SECRET           long random string (already generated)
+    GOOGLE_CLIENT_ID     Google OAuth client id
+    CLIENT_URL           your Vercel website URL (no trailing slash)
+    VAPID_PUBLIC_KEY     web-push public key
+    VAPID_PRIVATE_KEY    web-push private key
+    VAPID_SUBJECT        mailto:admin@groupbank.app
+    SMTP_HOST            smtp.gmail.com        (optional)
+    SMTP_PORT            587                   (optional)
+    SMTP_USER            your gmail address    (optional)
+    SMTP_PASS            gmail app password    (optional)
+    FROM_EMAIL           Group Bank <no-reply@groupbank.app>  (optional)
+    (do NOT set PORT)
+
+VERCEL (frontend / client):
+    VITE_API_URL            https://<your-render-url>/api
+    VITE_SOCKET_URL         https://<your-render-url>
+    VITE_GOOGLE_CLIENT_ID   same Google client id
+    VITE_VAPID_PUBLIC_KEY   same web-push public key
+
+==========================================================================
+ You're done. Share your Vercel URL (or the room QR/link) with friends!
+==========================================================================
