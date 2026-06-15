@@ -84,22 +84,39 @@ export default function Login() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-start px-5 py-8 lg:flex-row lg:items-center lg:justify-center lg:gap-16 lg:py-10 lg:px-8">
-        {/* Brand mark — sits at the very top on mobile only */}
-        <div className="mb-6 flex w-full justify-center lg:hidden">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 lg:px-8 lg:py-8">
+        {/* Top bar: brand on the left, quick Google login opposite it */}
+        <header className="flex items-center justify-between gap-3">
           <Logo />
-        </div>
-
-        {/* Hero / pitch */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="order-2 mt-10 w-full max-w-xl text-center lg:order-1 lg:mt-0 lg:text-left"
-        >
-          <div className="mb-6 hidden lg:flex lg:justify-start">
-            <Logo />
+          <div className="flex min-h-[40px] items-center">
+            {signingIn ? (
+              <span className="flex items-center gap-2 text-sm font-medium text-brand-600">
+                <Spinner size={18} />
+                Signing in…
+              </span>
+            ) : (
+              <GoogleLogin
+                onSuccess={(cred) => handleSuccess(cred)}
+                onError={() =>
+                  toast.error("Google sign-in was cancelled or failed.")
+                }
+                type="icon"
+                shape="circle"
+                size="large"
+              />
+            )}
           </div>
+        </header>
+
+        {/* Hero + sign-in card */}
+        <div className="flex flex-1 flex-col items-center justify-center gap-10 py-10 lg:flex-row lg:gap-16">
+          {/* Hero / pitch */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="w-full max-w-xl text-center lg:text-left"
+          >
 
           <motion.span
             initial={{ opacity: 0, scale: 0.9 }}
@@ -157,7 +174,7 @@ export default function Login() {
           initial={{ opacity: 0, y: 30, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
-          className="order-1 w-full max-w-sm lg:order-2"
+          className="w-full max-w-sm"
         >
           <div className="glass rounded-2xl border border-white/40 p-7 shadow-xl shadow-brand-900/5">
             <div className="mb-1 flex justify-center">
@@ -197,6 +214,7 @@ export default function Login() {
             </p>
           </div>
         </motion.div>
+        </div>
       </div>
     </div>
   );
