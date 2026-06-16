@@ -31,7 +31,21 @@ self.addEventListener("push", (event) => {
     renotify: false,
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    (async () => {
+      // If the app is already open & focused/visible, let the in-app toast
+      // handle it and skip the system notification (avoids duplicates).
+      const clients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const appIsOpen = clients.some(
+        (c) => c.focused || c.visibilityState === "visible"
+      );
+      if (appIsOpen) return;
+      await self.registration.showNotification(title, options);
+    })()
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {

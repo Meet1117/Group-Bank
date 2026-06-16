@@ -434,12 +434,33 @@ export default function Room() {
         </motion.div>
       </AnimatePresence>
 
+      {/* Admin actions */}
+      {isAdmin && (
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Button
+            as={Link}
+            to={`/room/${id}/deposit`}
+            variant="secondary"
+            size="lg"
+            fullWidth
+          >
+            <PiggyBank size={18} />
+            Deposit
+          </Button>
+          <Button as={Link} to={`/room/${id}/expense`} size="lg" fullWidth>
+            <Plus size={18} />
+            Add Expense
+          </Button>
+        </div>
+      )}
+
       {/* Open chat */}
       <Button
         as={Link}
         to={`/room/${id}/chat`}
+        variant="secondary"
         fullWidth
-        className="mt-4"
+        className="mt-3"
         size="lg"
       >
         <MessageCircle size={18} />
@@ -525,40 +546,6 @@ export default function Room() {
         </div>
       </div>
 
-      {/* Admin floating actions */}
-      {isAdmin && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl px-4 pb-[calc(env(safe-area-inset-bottom)+5rem)] md:pb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            className="pointer-events-auto flex gap-3"
-          >
-            <Button
-              as={Link}
-              to={`/room/${id}/deposit`}
-              variant="secondary"
-              fullWidth
-              className="shadow-lg shadow-slate-900/5"
-            >
-              <PiggyBank size={18} />
-              Deposit
-            </Button>
-            <Button
-              as={Link}
-              to={`/room/${id}/expense`}
-              fullWidth
-              className="shadow-lg shadow-brand-600/25"
-            >
-              <Plus size={18} />
-              Add Expense
-            </Button>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Spacer so floating bar doesn't cover content */}
-      {isAdmin && <div className="h-20" />}
 
       {/* Share / invite modal */}
       <Modal

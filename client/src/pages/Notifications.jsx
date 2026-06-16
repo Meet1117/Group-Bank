@@ -61,16 +61,16 @@ export default function Notifications() {
 
   return (
     <div className="mx-auto w-full max-w-xl px-4 pt-4">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-500 text-white shadow-sm shadow-brand-600/30">
-            <Bell size={24} />
+      <div className="mb-6 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-500 text-white shadow-sm shadow-brand-600/30">
+            <Bell size={22} />
           </div>
-          <div>
-            <h1 className="font-display text-2xl font-bold text-slate-900">
+          <div className="min-w-0">
+            <h1 className="truncate font-display text-xl font-bold text-slate-900 sm:text-2xl">
               Notifications
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="truncate text-sm text-slate-500">
               {unreadCount > 0
                 ? `${unreadCount} unread`
                 : "You're all caught up"}
@@ -78,9 +78,15 @@ export default function Notifications() {
           </div>
         </div>
         {unreadCount > 0 && (
-          <Button size="sm" variant="secondary" onClick={markAllRead}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={markAllRead}
+            className="flex-none"
+            aria-label="Mark all read"
+          >
             <CheckCheck size={16} />
-            Mark all read
+            <span className="hidden sm:inline">Mark all read</span>
           </Button>
         )}
       </div>

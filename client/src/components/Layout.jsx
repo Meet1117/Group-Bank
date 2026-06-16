@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, ChevronDown } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -11,6 +11,9 @@ import Avatar from "./ui/Avatar";
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Chat is a full-screen view: no page padding, no bottom nav.
+  const isChat = /^\/room\/[^/]+\/chat\/?$/.test(location.pathname);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -33,7 +36,11 @@ export default function Layout() {
   const fullName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email : "";
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div
+      className={`bg-slate-50 flex flex-col ${
+        isChat ? "h-[100dvh] overflow-hidden" : "min-h-screen"
+      }`}
+    >
       <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/80 backdrop-blur-lg">
         <div className="mx-auto max-w-3xl px-4 h-16 flex items-center justify-between">
           <Link to="/" className="shrink-0" aria-label="Group Bank home">
@@ -109,11 +116,17 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 w-full mx-auto max-w-3xl px-4 pt-5 pb-28 md:pb-10">
+      <main
+        className={
+          isChat
+            ? "flex-1 min-h-0 w-full flex flex-col"
+            : "flex-1 w-full mx-auto max-w-3xl px-4 pt-5 pb-28 md:pb-10"
+        }
+      >
         <Outlet />
       </main>
 
-      <BottomNav />
+      {!isChat && <BottomNav />}
     </div>
   );
 }
