@@ -34,6 +34,7 @@ import BalanceOverview from "../components/bank/BalanceOverview";
 import TransactionList from "../components/bank/TransactionList";
 import MemberList from "../components/bank/MemberList";
 import Modal from "../components/ui/Modal";
+import Avatar from "../components/ui/Avatar";
 import { QRCodeSVG } from "qrcode.react";
 
 const TABS = [
@@ -71,6 +72,8 @@ export default function Room() {
   const [editCurrencyCode, setEditCurrencyCode] = useState("INR");
   const [saving, setSaving] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [editPayers, setEditPayers] = useState([]);
+  const [canManage, setCanManage] = useState(false);
 
   const isAdmin = role === "admin";
   const mountedRef = useRef(true);
@@ -90,6 +93,7 @@ export default function Room() {
       setRole(data.role);
       setBalances(data.balances);
       setCounts(data.counts || { transactions: 0, pendingRequests: 0 });
+      setCanManage(!!data.canManage);
       setError("");
     } catch (err) {
       if (!mountedRef.current) return;
@@ -211,6 +215,7 @@ export default function Room() {
     setEditName(room.name || "");
     setEditJoinType(room.joinType || "open");
     setEditCurrencyCode(room.currency?.code || "INR");
+    setEditPayers((room.payers || []).map(String));
     setSettingsOpen(true);
   };
 
@@ -228,6 +233,7 @@ export default function Room() {
         name,
         currency: { code: cur.code, symbol: cur.symbol, name: cur.name },
         joinType: editJoinType,
+        payers: editPayers,
       });
       setRoom(data.room);
       toast.success("Room updated");
@@ -434,20 +440,19 @@ export default function Room() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Admin actions */}
-      {isAdmin && (
+      {/* Deposit / expense actions (admin + selected payers) */}
+      {canManage && (
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Button
             as={Link}
             to={`/room/${id}/deposit`}
             variant="secondary"
-            size="lg"
             fullWidth
           >
             <PiggyBank size={18} />
             Deposit
           </Button>
-          <Button as={Link} to={`/room/${id}/expense`} size="lg" fullWidth>
+          <Button as={Link} to={`/room/${id}/expense`} fullWidth>
             <Plus size={18} />
             Add Expense
           </Button>
@@ -655,6 +660,72 @@ export default function Room() {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Payers: members allowed to add deposits & expenses */}
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  Who can add money & expenses
+                </label>
+                <p className="mb-2 text-xs text-slate-400">
+                  You (admin) always can. Select members to let them record
+                  deposits and expenses too.
+                </p>
+                <div className="space-y-1.5">
+                  {(room?.members || [])
+                    .map((m) => m.user)
+                    .filter(
+                      (u) =>
+                        u &&
+                        String(u._id) !== String(room.admin?._id || room.admin)
+                    )
+                    .map((u) => {
+                      const uid = String(u._id);
+                      const active = editPayers.includes(uid);
+                      return (
+                        <button
+                          key={uid}
+                          type="button"
+                          onClick={() =>
+                            setEditPayers((prev) =>
+                              prev.includes(uid)
+                                ? prev.filter((x) => x !== uid)
+                                : [...prev, uid]
+                            )
+                          }
+                          className={`flex w-full items-center gap-3 rounded-2xl border p-2.5 text-left transition ${
+                            active
+                              ? "border-brand-500 bg-brand-50"
+                              : "border-slate-200"
+                          }`}
+                        >
+                          <Avatar user={u} size={32} />
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">
+                            {`${u.firstName || ""} ${u.lastName || ""}`.trim() ||
+                              u.email}
+                          </span>
+                          <span
+                            className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border ${
+                              active
+                                ? "border-brand-600 bg-brand-600 text-white"
+                                : "border-slate-300 text-transparent"
+                            }`}
+                          >
+                            <Check size={13} />
+                          </span>
+                        </button>
+                      );
+                    })}
+                  {(room?.members || []).filter(
+                    (m) =>
+                      String(m.user?._id || m.user) !==
+                      String(room.admin?._id || room.admin)
+                  ).length === 0 && (
+                    <p className="text-xs text-slate-400">
+                      No other members yet.
+                    </p>
+                  )}
                 </div>
               </div>
 

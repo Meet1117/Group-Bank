@@ -23,42 +23,54 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
-  const [loading, setLoading] = useState(true);
+  // Only show the full-screen loader when we have a token but NO cached user
+  // to render. If a cached user exists, render instantly and validate in the
+  // background — this prevents the "stuck loader" when the backend is waking up.
+  const [loading, setLoading] = useState(() => {
+    return (
+      !!localStorage.getItem("gb_token") && !localStorage.getItem("gb_user")
+    );
+  });
 
-  // Hydrate user from /auth/me on mount when a token is present.
+  // Hydrate / re-validate the user from /auth/me on mount when a token exists.
   useEffect(() => {
     let active = true;
+    const stored = localStorage.getItem("gb_token");
+    if (!stored) {
+      setLoading(false);
+      return undefined;
+    }
 
-    async function hydrate() {
-      const stored = localStorage.getItem("gb_token");
-      if (!stored) {
-        if (active) {
-          setUser(null);
-          setLoading(false);
-        }
-        return;
-      }
+    // Safety net: never let the loader hang (slow / cold-starting backend).
+    const safety = setTimeout(() => {
+      if (active) setLoading(false);
+    }, 6000);
 
+    (async () => {
       try {
         const { data } = await api.get("/auth/me");
         if (!active) return;
         setUser(data.user);
         localStorage.setItem("gb_user", JSON.stringify(data.user));
-      } catch {
-        if (!active) return;
-        localStorage.removeItem("gb_token");
-        localStorage.removeItem("gb_user");
-        setToken(null);
-        setUser(null);
+      } catch (err) {
+        // Only log out on a real auth failure. On a network/timeout error
+        // (e.g. backend waking up) keep the cached session so the app works.
+        const status = err?.response?.status;
+        if (active && (status === 401 || status === 403)) {
+          localStorage.removeItem("gb_token");
+          localStorage.removeItem("gb_user");
+          setToken(null);
+          setUser(null);
+        }
       } finally {
         if (active) setLoading(false);
+        clearTimeout(safety);
       }
-    }
-
-    hydrate();
+    })();
 
     return () => {
       active = false;
+      clearTimeout(safety);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

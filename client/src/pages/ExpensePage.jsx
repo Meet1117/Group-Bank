@@ -28,6 +28,7 @@ export default function ExpensePage() {
   const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState(null);
   const [role, setRole] = useState("member");
+  const [canManage, setCanManage] = useState(false);
   const [members, setMembers] = useState([]);
 
   const [title, setTitle] = useState("");
@@ -54,6 +55,7 @@ export default function ExpensePage() {
         if (!active) return;
         setRoom(data.room);
         setRole(data.role);
+        setCanManage(!!data.canManage);
         const mems = (data.room.members || []).map((m) => m.user || m);
         setMembers(mems);
         const init = {};
@@ -73,7 +75,7 @@ export default function ExpensePage() {
   }, [id]);
 
   const currency = room ? room.currency : null;
-  const isAdmin = role === "admin";
+  const isAdmin = canManage;
   const totalNum = round2(total);
 
   const checkedIds = useMemo(
@@ -205,7 +207,7 @@ export default function ExpensePage() {
           Admins only
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Only the room admin can record expenses.
+          Only the admin or a selected payer can record expenses.
         </p>
         <Button variant="secondary" className="mt-5" as={Link} to={`/room/${id}`}>
           <ArrowLeft size={16} />

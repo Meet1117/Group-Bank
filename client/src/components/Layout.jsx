@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 import NotificationBell from "./NotificationBell";
 import BottomNav from "./BottomNav";
+import Footer from "./Footer";
 import Avatar from "./ui/Avatar";
 
 export default function Layout() {
@@ -124,6 +125,7 @@ export default function Layout() {
         }
       >
         <Outlet />
+        {!isChat && <Footer />}
       </main>
 
       {!isChat && <BottomNav />}

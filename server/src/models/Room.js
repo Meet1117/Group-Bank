@@ -47,6 +47,11 @@ const RoomSchema = new mongoose.Schema(
       type: [MemberSchema],
       default: [],
     },
+    // Members (besides the admin) the admin allows to record deposits & expenses.
+    payers: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      default: [],
+    },
   },
   { timestamps: true }
 );

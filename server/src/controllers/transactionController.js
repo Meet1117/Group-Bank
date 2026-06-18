@@ -69,8 +69,13 @@ async function loadRoomMember(req) {
   }
 
   const isAdmin = String(room.admin) === String(req.userId);
+  const isPayer = Array.isArray(room.payers)
+    ? room.payers.some((p) => String(p) === String(req.userId))
+    : false;
+  // Admin OR a selected payer can record/delete deposits & expenses.
+  const canManage = isAdmin || isPayer;
 
-  return { room, isAdmin };
+  return { room, isAdmin, isPayer, canManage };
 }
 
 /**
@@ -123,12 +128,12 @@ async function list(req, res) {
  */
 async function createDeposit(req, res) {
   try {
-    const { room, isAdmin } = await loadRoomMember(req);
+    const { room, canManage } = await loadRoomMember(req);
 
-    if (!isAdmin) {
+    if (!canManage) {
       return res
         .status(403)
-        .json({ message: "Only the room admin can add deposits" });
+        .json({ message: "Only the admin or a selected payer can add deposits" });
     }
 
     const { note } = req.body || {};
@@ -197,12 +202,12 @@ async function createDeposit(req, res) {
  */
 async function createExpense(req, res) {
   try {
-    const { room, isAdmin } = await loadRoomMember(req);
+    const { room, canManage } = await loadRoomMember(req);
 
-    if (!isAdmin) {
+    if (!canManage) {
       return res
         .status(403)
-        .json({ message: "Only the room admin can add expenses" });
+        .json({ message: "Only the admin or a selected payer can add expenses" });
     }
 
     const { title, category } = req.body || {};
@@ -306,12 +311,12 @@ async function balances(req, res) {
  */
 async function deleteTransaction(req, res) {
   try {
-    const { room, isAdmin } = await loadRoomMember(req);
+    const { room, canManage } = await loadRoomMember(req);
 
-    if (!isAdmin) {
+    if (!canManage) {
       return res
         .status(403)
-        .json({ message: "Only the room admin can delete transactions" });
+        .json({ message: "Only the admin or a selected payer can delete transactions" });
     }
 
     const { txId } = req.params;

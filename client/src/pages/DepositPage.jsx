@@ -34,6 +34,7 @@ export default function DepositPage() {
   const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState(null);
   const [role, setRole] = useState("member");
+  const [canManage, setCanManage] = useState(false);
   const [members, setMembers] = useState([]);
 
   const [note, setNote] = useState("");
@@ -58,6 +59,7 @@ export default function DepositPage() {
         if (!active) return;
         setRoom(data.room);
         setRole(data.role);
+        setCanManage(!!data.canManage);
         const mems = (data.room.members || []).map((m) => m.user || m);
         setMembers(mems);
         const init = {};
@@ -77,7 +79,7 @@ export default function DepositPage() {
   }, [id]);
 
   const currency = room ? room.currency : null;
-  const isAdmin = role === "admin";
+  const isAdmin = canManage;
 
   const checkedIds = useMemo(
     () => members.map((u) => String(u._id)).filter((uid) => rows[uid]?.checked),
@@ -195,7 +197,7 @@ export default function DepositPage() {
           Admins only
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Only the room admin can record deposits.
+          Only the admin or a selected payer can record deposits.
         </p>
         <Button variant="secondary" className="mt-5" as={Link} to={`/room/${id}`}>
           <ArrowLeft size={16} />

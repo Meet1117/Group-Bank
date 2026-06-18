@@ -6,6 +6,7 @@ import { Wallet, Users, Receipt, ShieldCheck, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import Logo from "../components/Logo";
+import Footer from "../components/Footer";
 import Spinner from "../components/ui/Spinner";
 
 const FEATURES = [
@@ -215,6 +216,7 @@ export default function Login() {
           </div>
         </motion.div>
         </div>
+        <Footer />
       </div>
     </div>
   );

@@ -162,6 +162,9 @@ async function getRoom(req, res) {
 
     const admin = isAdmin(room, me);
     const role = admin ? "admin" : "member";
+    const payerIds = (room.payers || []).map((p) => String(p));
+    const isPayer = payerIds.includes(String(me));
+    const canManage = admin || isPayer;
 
     const transactions = await Transaction.find({ room: room._id }).lean();
 
@@ -182,6 +185,7 @@ async function getRoom(req, res) {
     return res.json({
       room,
       role,
+      canManage,
       balances,
       counts: {
         transactions: transactions.length,
@@ -205,7 +209,7 @@ async function updateRoom(req, res) {
       return res.status(403).json({ message: "Only the admin can edit this room" });
     }
 
-    const { name, currency, joinType } = req.body || {};
+    const { name, currency, joinType, payers } = req.body || {};
 
     if (name !== undefined) {
       const trimmed = String(name).trim();
@@ -213,6 +217,14 @@ async function updateRoom(req, res) {
         return res.status(400).json({ message: "Room name is required" });
       }
       room.name = trimmed;
+    }
+    if (Array.isArray(payers)) {
+      const memberIds = new Set(room.members.map((m) => String(m.user)));
+      const adminId = String(room.admin);
+      // Only members can be payers; the admin is always able to manage.
+      room.payers = [...new Set(payers.map(String))].filter(
+        (id) => memberIds.has(id) && id !== adminId
+      );
     }
     if (currency && currency.code) {
       room.currency = {
