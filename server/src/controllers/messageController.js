@@ -150,4 +150,35 @@ async function markRead(req, res) {
   }
 }
 
-module.exports = { listMessages, sendMessage, markRead };
+/**
+ * DELETE /api/rooms/:roomId/messages/:messageId
+ * Only the sender can delete. Removes from DB and notifies all room members.
+ */
+async function deleteMessage(req, res) {
+  try {
+    const { roomId, messageId } = req.params;
+    const userId = req.user._id;
+
+    const message = await Message.findOne({ _id: messageId, room: roomId }).lean();
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+    if (String(message.sender) !== String(userId)) {
+      return res.status(403).json({ message: "You can only delete your own messages" });
+    }
+
+    await Message.deleteOne({ _id: messageId });
+
+    emitToRoom(String(roomId), "message:deleted", {
+      messageId: String(messageId),
+      roomId: String(roomId),
+    });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("[messages] deleteMessage error:", err);
+    return res.status(500).json({ message: "Failed to delete message" });
+  }
+}
+
+module.exports = { listMessages, sendMessage, markRead, deleteMessage };

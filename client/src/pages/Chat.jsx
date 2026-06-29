@@ -228,14 +228,22 @@ export default function Chat() {
       );
     };
 
+    const onDeleted = ({ messageId }) => {
+      setMessages((prev) =>
+        prev.filter((m) => String(m._id) !== String(messageId))
+      );
+    };
+
     socket.on("message:new", onNew);
     socket.on("message:seen", onSeen);
+    socket.on("message:deleted", onDeleted);
     socket.on("typing", onTyping);
     socket.on("stop-typing", onStopTyping);
 
     return () => {
       socket.off("message:new", onNew);
       socket.off("message:seen", onSeen);
+      socket.off("message:deleted", onDeleted);
       socket.off("typing", onTyping);
       socket.off("stop-typing", onStopTyping);
       Object.values(typingTimers.current).forEach((t) => clearTimeout(t));
@@ -333,6 +341,21 @@ export default function Chat() {
       socket.emit(isTyping ? "typing" : "stop-typing", { roomId });
     },
     [socket, roomId]
+  );
+
+  const handleDelete = useCallback(
+    async (messageId) => {
+      // Optimistic remove so the UI feels instant.
+      setMessages((prev) =>
+        prev.filter((m) => String(m._id) !== String(messageId))
+      );
+      try {
+        await api.delete(`/rooms/${roomId}/messages/${messageId}`);
+      } catch {
+        toast.error("Couldn't delete message");
+      }
+    },
+    [roomId]
   );
 
   // ---- grouped render --------------------------------------------------
@@ -440,6 +463,7 @@ export default function Chat() {
                       currentUserId={currentUserId}
                       otherCount={otherCount}
                       showSender={showSender}
+                      onDelete={mine ? handleDelete : undefined}
                     />
                   );
                 })}
