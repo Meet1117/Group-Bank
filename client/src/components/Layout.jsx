@@ -8,6 +8,10 @@ import NotificationBell from "./NotificationBell";
 import BottomNav from "./BottomNav";
 import Footer from "./Footer";
 import Avatar from "./ui/Avatar";
+import PullIndicator from "./PullIndicator";
+
+const PULL_THRESHOLD = 75;  // display-px needed to trigger reload
+const PULL_MAX = 92;         // max display-px (rubber-band cap)
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -17,6 +21,68 @@ export default function Layout() {
   const isChat = /^\/room\/[^/]+\/chat\/?$/.test(location.pathname);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  // ── Pull-to-refresh ──────────────────────────────────────────────────────
+  const [pull, setPull] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [reloading, setReloading] = useState(false);
+  const startY = useRef(null);
+  const pullRef = useRef(0);
+  const draggingRef = useRef(false);
+
+  useEffect(() => {
+    if (isChat) return; // no pull-to-refresh in the full-screen chat view
+
+    const onTouchStart = (e) => {
+      if (window.scrollY > 8) return; // only activate when scrolled to very top
+      startY.current = e.touches[0].clientY;
+    };
+
+    const onTouchMove = (e) => {
+      if (startY.current === null) return;
+      const raw = e.touches[0].clientY - startY.current;
+      if (raw <= 0) {
+        pullRef.current = 0;
+        setPull(0);
+        if (draggingRef.current) { draggingRef.current = false; setDragging(false); }
+        return;
+      }
+      // 0.5× damping + hard cap — feels like rubber band resistance
+      const d = Math.min(raw * 0.5, PULL_MAX);
+      pullRef.current = d;
+      if (!draggingRef.current) { draggingRef.current = true; setDragging(true); }
+      setPull(d);
+      if (raw > 10) e.preventDefault(); // prevent native overscroll once pulling
+    };
+
+    const onTouchEnd = () => {
+      if (startY.current === null) return;
+      startY.current = null;
+      draggingRef.current = false;
+      setDragging(false);
+
+      if (pullRef.current >= PULL_THRESHOLD) {
+        // Hold at threshold for 800 ms then reload
+        setReloading(true);
+        pullRef.current = PULL_THRESHOLD;
+        setPull(PULL_THRESHOLD);
+        setTimeout(() => window.location.reload(), 800);
+      } else {
+        pullRef.current = 0;
+        setPull(0);
+      }
+    };
+
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [isChat]);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -117,11 +183,47 @@ export default function Layout() {
         </div>
       </header>
 
+      {/* Pull-to-refresh indicator — sits fixed below the sticky header,
+          revealed by the translateY on <main> below */}
+      {!isChat && (pull > 0 || reloading) && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed left-0 right-0 z-20 flex justify-center"
+          style={{ top: 64 }}
+        >
+          <div
+            style={{
+              // Slide down from behind the header as progress grows.
+              // progress=0 → translateY(-44px) hidden; progress=1 → translateY(16px) visible
+              transform: `translateY(${Math.min(pull / PULL_THRESHOLD, 1) * 60 - 44}px) scale(${0.6 + Math.min(pull / PULL_THRESHOLD, 1) * 0.4})`,
+              opacity: Math.min((pull / PULL_THRESHOLD) * 2.5, 1),
+              transition: dragging
+                ? "none"
+                : "transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease",
+              willChange: "transform, opacity",
+            }}
+          >
+            <PullIndicator progress={pull / PULL_THRESHOLD} reloading={reloading} />
+          </div>
+        </div>
+      )}
+
       <main
         className={
           isChat
             ? "flex-1 min-h-0 w-full flex flex-col"
             : "flex-1 w-full mx-auto max-w-3xl px-4 pt-5 pb-28 md:pb-10"
+        }
+        style={
+          !isChat
+            ? {
+                transform: `translateY(${pull}px)`,
+                transition: dragging
+                  ? "none"
+                  : "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                willChange: pull > 0 ? "transform" : "auto",
+              }
+            : undefined
         }
       >
         <Outlet />

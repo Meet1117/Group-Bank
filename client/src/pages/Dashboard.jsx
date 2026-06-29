@@ -71,17 +71,29 @@ function AvatarStack({ members = [], total = 0, size = 30 }) {
   );
 }
 
+const ROOMS_CACHE = "gb_rooms_v1";
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { socket } = useSocket();
-  const [rooms, setRooms] = useState([]);
-  const [loading, setLoading] = useState(true);
   const debounceRef = useRef(null);
+
+  // Read cached rooms immediately so cards render without waiting for the network.
+  const [rooms, setRooms] = useState(() => {
+    try {
+      const c = localStorage.getItem(ROOMS_CACHE);
+      return c ? JSON.parse(c) : [];
+    } catch { return []; }
+  });
+  // Only show the skeleton on the very first load (no cached data).
+  const [loading, setLoading] = useState(() => !localStorage.getItem(ROOMS_CACHE));
 
   const loadRooms = async () => {
     try {
       const { data } = await api.get("/rooms");
-      setRooms(Array.isArray(data?.rooms) ? data.rooms : []);
+      const fresh = Array.isArray(data?.rooms) ? data.rooms : [];
+      setRooms(fresh);
+      try { localStorage.setItem(ROOMS_CACHE, JSON.stringify(fresh)); } catch { /* quota */ }
     } catch {
       toast.error("Couldn't load your rooms");
     } finally {

@@ -91,6 +91,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem("gb_token");
     localStorage.removeItem("gb_user");
+    localStorage.removeItem("gb_rooms_v1");
     setToken(null);
     setUser(null);
     disconnectSocket();
