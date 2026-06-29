@@ -56,4 +56,8 @@ const RoomSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Compound index covers both "find by member" and "sort by updatedAt" in listRooms.
+RoomSchema.index({ "members.user": 1, updatedAt: -1 });
+RoomSchema.index({ admin: 1 });
+
 module.exports = mongoose.models.Room || mongoose.model("Room", RoomSchema);

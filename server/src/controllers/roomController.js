@@ -151,9 +151,12 @@ async function getRoom(req, res) {
   try {
     const me = req.user._id;
 
-    const room = await Room.findById(req.params.id)
-      .populate("members.user", memberPublicSelect())
-      .lean();
+    const [room, transactions] = await Promise.all([
+      Room.findById(req.params.id)
+        .populate("members.user", memberPublicSelect())
+        .lean(),
+      Transaction.find({ room: req.params.id }).lean(),
+    ]);
 
     if (!room) return res.status(404).json({ message: "Room not found" });
     if (!isMember(room, me)) {
@@ -165,8 +168,6 @@ async function getRoom(req, res) {
     const payerIds = (room.payers || []).map((p) => String(p));
     const isPayer = payerIds.includes(String(me));
     const canManage = admin || isPayer;
-
-    const transactions = await Transaction.find({ room: room._id }).lean();
 
     const memberUsers = room.members
       .map((m) => m.user)

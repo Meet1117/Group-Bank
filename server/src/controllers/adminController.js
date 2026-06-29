@@ -85,12 +85,12 @@ async function listUsers(req, res) {
         }
       : {};
 
-    const users = await User.find(filter).sort({ createdAt: -1 }).limit(500).lean();
-
-    // Count rooms each user belongs to (one grouped query).
-    const counts = await Room.aggregate([
-      { $unwind: "$members" },
-      { $group: { _id: "$members.user", count: { $sum: 1 } } },
+    const [users, counts] = await Promise.all([
+      User.find(filter).sort({ createdAt: -1 }).limit(500).lean(),
+      Room.aggregate([
+        { $unwind: "$members" },
+        { $group: { _id: "$members.user", count: { $sum: 1 } } },
+      ]),
     ]);
     const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
 
@@ -211,29 +211,27 @@ async function listRooms(req, res) {
 // GET /api/admin/rooms/:id -------------------------------------------------
 async function getRoom(req, res) {
   try {
-    const room = await Room.findById(req.params.id)
-      .populate("admin", USER_FIELDS)
-      .populate("members.user", USER_FIELDS)
-      .lean();
-    if (!room) return res.status(404).json({ message: "Room not found" });
+    const [room, transactions, messageCount, pendingRequests] = await Promise.all([
+      Room.findById(req.params.id)
+        .populate("admin", USER_FIELDS)
+        .populate("members.user", USER_FIELDS)
+        .lean(),
+      Transaction.find({ room: req.params.id })
+        .populate("createdBy", USER_FIELDS)
+        .populate("allocations.user", USER_FIELDS)
+        .populate("splitAmong.user", USER_FIELDS)
+        .sort({ createdAt: -1 })
+        .lean(),
+      Message.countDocuments({ room: req.params.id }),
+      JoinRequest.countDocuments({ room: req.params.id, status: "pending" }),
+    ]);
 
-    const transactions = await Transaction.find({ room: room._id })
-      .populate("createdBy", USER_FIELDS)
-      .populate("allocations.user", USER_FIELDS)
-      .populate("splitAmong.user", USER_FIELDS)
-      .sort({ createdAt: -1 })
-      .lean();
+    if (!room) return res.status(404).json({ message: "Room not found" });
 
     const memberUsers = (room.members || [])
       .map((m) => m.user)
       .filter((u) => u && u._id);
     const balances = computeBalances(transactions, memberUsers);
-
-    const messageCount = await Message.countDocuments({ room: room._id });
-    const pendingRequests = await JoinRequest.countDocuments({
-      room: room._id,
-      status: "pending",
-    });
 
     return res.json({
       room,

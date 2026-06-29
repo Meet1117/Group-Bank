@@ -669,9 +669,9 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mt-5">
-        {tab === "overview" && <Overview />}
-        {tab === "users" && <UsersTab meId={meId} />}
-        {tab === "rooms" && <RoomsTab />}
+        <div className={tab === "overview" ? "" : "hidden"}><Overview /></div>
+        <div className={tab === "users" ? "" : "hidden"}><UsersTab meId={meId} /></div>
+        <div className={tab === "rooms" ? "" : "hidden"}><RoomsTab /></div>
       </div>
     </div>
   );

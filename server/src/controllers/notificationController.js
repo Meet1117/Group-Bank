@@ -8,15 +8,10 @@ async function list(req, res) {
   try {
     const userId = req.user._id;
 
-    const notifications = await Notification.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .lean();
-
-    const unreadCount = await Notification.countDocuments({
-      user: userId,
-      read: false,
-    });
+    const [notifications, unreadCount] = await Promise.all([
+      Notification.find({ user: userId }).sort({ createdAt: -1 }).limit(100).lean(),
+      Notification.countDocuments({ user: userId, read: false }),
+    ]);
 
     return res.json({ notifications, unreadCount });
   } catch (err) {

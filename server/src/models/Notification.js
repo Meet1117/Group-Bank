@@ -6,7 +6,6 @@ const NotificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
     },
     room: {
       type: mongoose.Schema.Types.ObjectId,
@@ -31,6 +30,11 @@ const NotificationSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Covers list query (newest first per user).
+NotificationSchema.index({ user: 1, createdAt: -1 });
+// Covers unread count query.
+NotificationSchema.index({ user: 1, read: 1 });
 
 module.exports =
   mongoose.models.Notification ||

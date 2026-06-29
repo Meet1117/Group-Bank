@@ -22,7 +22,6 @@ const TransactionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Room",
       required: true,
-      index: true,
     },
     type: {
       type: String,
@@ -58,6 +57,11 @@ const TransactionSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Compound covers all per-room queries; leftmost key also covers room-only lookups.
+TransactionSchema.index({ room: 1, createdAt: -1 });
+// Covers type-filtered sums (deposit/expense aggregation in listRooms).
+TransactionSchema.index({ room: 1, type: 1 });
 
 module.exports =
   mongoose.models.Transaction ||

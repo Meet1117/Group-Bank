@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -76,6 +76,7 @@ export default function Dashboard() {
   const { socket } = useSocket();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const debounceRef = useRef(null);
 
   const loadRooms = async () => {
     try {
@@ -95,10 +96,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!socket) return;
-    const onUpdate = () => loadRooms();
+    const onUpdate = () => {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(loadRooms, 400);
+    };
     socket.on("room:update", onUpdate);
     return () => {
       socket.off("room:update", onUpdate);
+      clearTimeout(debounceRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);

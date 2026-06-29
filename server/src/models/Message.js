@@ -14,7 +14,6 @@ const MessageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Room",
       required: true,
-      index: true,
     },
     sender: {
       type: mongoose.Schema.Types.ObjectId,
@@ -32,6 +31,11 @@ const MessageSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Compound index covers paginated message listing (most common query).
+MessageSchema.index({ room: 1, createdAt: -1 });
+// Covers the markRead query: find unread messages by room + user.
+MessageSchema.index({ room: 1, "readBy.user": 1 });
 
 module.exports =
   mongoose.models.Message || mongoose.model("Message", MessageSchema);
