@@ -8,6 +8,7 @@ import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { SocketProvider } from "./context/SocketContext.jsx";
 import { NotificationProvider } from "./context/NotificationContext.jsx";
+import InstallPrompt from "./components/InstallPrompt.jsx";
 import "./index.css";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
@@ -20,6 +21,7 @@ createRoot(document.getElementById("root")).render(
           <SocketProvider>
             <NotificationProvider>
               <App />
+              <InstallPrompt />
               <Toaster
                 position="top-center"
                 toastOptions={{
